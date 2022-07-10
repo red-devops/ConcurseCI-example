@@ -1,0 +1,51 @@
+resources:
+- name: repo
+  type: git
+  source:
+    uri: git@github.com:red-devops/ConcurseCI-example-hidden.git
+    branch: main
+    private_key: ((ID_RDS))
+
+jobs:
+- name: tell-me-a-joke
+  plan:
+  - get: repo
+    trigger: true
+  - task: joke-task
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: xxxxxxxxxxxx.dkr.ecr.eu-central-1.amazonaws.com/python3.9
+          aws_access_key_id: ((ACCESS_KEY_ID))
+          aws_secret_access_key: ((SECRET_ACCESS_KEY))
+      inputs:
+      - name: repo
+      run:
+        path: sh
+        args:
+        - -cx
+        - |
+          ls -l
+          cd ./repo
+          cat joke.txt
+          python3 answer.py
+          mv joke.txt ../joke-artifact/joke.txt
+      outputs:
+      - name: joke-artifact
+
+  - task: answer-joke-task
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: xxxxxxxxxxxx.dkr.ecr.eu-central-1.amazonaws.com/python3.9
+          aws_access_key_id: ((ACCESS_KEY_ID))
+          aws_secret_access_key: ((SECRET_ACCESS_KEY))
+      inputs:
+      - name: joke-artifact
+      run:
+         path: cat
+         args: ["./joke-artifact/joke.txt"]
